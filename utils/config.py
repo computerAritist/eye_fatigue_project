@@ -18,5 +18,5 @@ BLINK_RATE_INTERVAL = 60      # seconds
 # Fatigue Classification
 # (Blink Rate per Minute)
 # ==========================================
-NORMAL_THRESHOLD = 15
-WARNING_THRESHOLD = 10
+NORMAL_THRESHOLD = 70
+WARNING_THRESHOLD = 100

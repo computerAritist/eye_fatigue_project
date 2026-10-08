@@ -13,12 +13,17 @@ class ALSSensor:
         self.bus = smbus2.SMBus(self.I2C_BUS)
 
     def read_register(self, register):
+
         data = self.bus.read_i2c_block_data(
             self.DEVICE_ADDR,
             register,
             2
         )
-        return (data[0] << 8) | data[1]
+
+        # ↓↓↓ 이 부분이야
+        value = (data[1] << 8) | data[0]
+
+        return value
 
     def read(self):
         lux = self.read_register(self.LUX_REG)
