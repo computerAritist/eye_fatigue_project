@@ -149,7 +149,9 @@ class EyeOpeningReduction:
     # Update
     # =========================================================
 
-    def update(self, frame):
+    def update(self, frame, timestamp=None):
+
+        sample_valid = False
 
         rgb = cv2.cvtColor(
             frame,
@@ -168,6 +170,7 @@ class EyeOpeningReduction:
 
             return {
                 "face_detected": False,
+                "sample_valid": False,
                 "calibrated": self.calibrated,
                 "baseline_eye_size": self.baseline_eye_size,
                 "current_eye_size": self.current_eye_size,
@@ -265,7 +268,7 @@ class EyeOpeningReduction:
             right_eye_size
         ) / 2.0
 
-        current_time = time.time()
+        current_time = time.time() if timestamp is None else float(timestamp)
 
         # =====================================================
         # Blink 상태는 제외
@@ -440,12 +443,15 @@ class EyeOpeningReduction:
                         self.reduction_ratio = float(
                             reduction
                         )
+                        sample_valid = True
 
         # =====================================================
         # 결과
         # =====================================================
 
         return {
+
+            "sample_valid": sample_valid,
 
             "face_detected":
                 True,

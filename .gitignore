@@ -1,0 +1,16 @@
+
+# Python virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Test videos and analysis results
+videos/
+results/
+
+# Temporary files
+*.log

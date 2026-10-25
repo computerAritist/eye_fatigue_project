@@ -12,7 +12,10 @@ class BlinkDetector:
     LEFT_EYE = [33, 160, 158, 133, 153, 144]
     RIGHT_EYE = [362, 385, 387, 263, 373, 380]
 
-    def __init__(self):
+    def __init__(self, *, aggregate_minutes=True):
+
+        self.aggregate_minutes = aggregate_minutes
+        self._video_clock_started = False
 
         # ============================================
         # EAR 기준
@@ -85,9 +88,21 @@ class BlinkDetector:
 
         return (A + B) / (2.0 * C)
 
-    def update(self, frame):
+    def reset_tracking(self):
+        """Cancel an unfinished blink without changing completed counts."""
+        self.in_blink = False
+        self.blink_start_time = None
+        self.min_ear_during_blink = 1.0
 
-        now = time.time()
+    def update(self, frame, timestamp=None):
+
+        now = time.time() if timestamp is None else float(timestamp)
+        if timestamp is not None and not self._video_clock_started:
+            self.start_time = now
+            self._video_clock_started = True
+        blink_event = False
+        blink_started_at = None
+        face = None
 
         rgb = cv2.cvtColor(
             frame,
@@ -221,6 +236,8 @@ class BlinkDetector:
                         self.total_blinks += 1
 
                         self.minute_blinks += 1
+                        blink_event = True
+                        blink_started_at = self.blink_start_time
 
                         print(
                             f"[BLINK] "
@@ -266,7 +283,7 @@ class BlinkDetector:
             self.start_time
         )
 
-        if elapsed >= BLINK_RATE_INTERVAL:
+        if self.aggregate_minutes and elapsed >= BLINK_RATE_INTERVAL:
 
             self.blink_rate = (
                 self.minute_blinks
@@ -289,6 +306,11 @@ class BlinkDetector:
         # ============================================
 
         return {
+
+            "blink_event": blink_event,
+            "blink_started_at": blink_started_at,
+            "blink_ended_at": now if blink_event else None,
+            "face_landmarks": face,
 
             "frame": frame,
 

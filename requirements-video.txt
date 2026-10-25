@@ -1,0 +1,8 @@
+# Validated baseline for Ubuntu 20.04 x86_64 and Python 3.11.
+# Legacy mp.solutions.face_mesh is required; do not upgrade MediaPipe blindly.
+mediapipe==0.10.21
+opencv-contrib-python==4.11.0.86
+numpy==1.26.4
+scipy==1.17.1
+protobuf==4.25.9
+matplotlib==3.11.2

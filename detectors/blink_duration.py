@@ -6,7 +6,9 @@ class BlinkDuration:
     def __init__(
         self,
         close_threshold=0.21,
-        open_threshold=0.24
+        open_threshold=0.24,
+        *,
+        aggregate_minutes=True
     ):
 
         # =====================================================
@@ -15,6 +17,9 @@ class BlinkDuration:
 
         self.measurement_interval = 60.0
         self.measurement_start = time.time()
+        self.aggregate_minutes = aggregate_minutes
+        self._video_clock_started = False
+        self.completed_blink_duration_ms = None
 
         # =====================================================
         # Blink 시작 / 종료 Threshold
@@ -57,9 +62,19 @@ class BlinkDuration:
     # Update
     # =========================================================
 
-    def update(self, ear):
+    def reset_tracking(self):
+        """Cancel an unfinished closure, including one interrupted by face loss."""
+        self.in_blink = False
+        self.blink_start_time = None
+        self.current_blink_duration_ms = 0.0
 
-        now = time.time()
+    def update(self, ear, timestamp=None, face_detected=None):
+
+        now = time.time() if timestamp is None else float(timestamp)
+        if timestamp is not None and not self._video_clock_started:
+            self.measurement_start = now
+            self._video_clock_started = True
+        self.completed_blink_duration_ms = None
 
         self.measurement_complete = False
 
@@ -68,9 +83,9 @@ class BlinkDuration:
         # 얼굴 미검출 가능성이 있으므로 측정 제외
         # =====================================================
 
-        if ear <= 0:
+        if ear <= 0 or face_detected is False:
 
-            self.current_blink_duration_ms = 0.0
+            self.reset_tracking()
 
             return self._make_result(now)
 
@@ -143,9 +158,9 @@ class BlinkDuration:
                 duration_ms <= 2000.0
             ):
 
-                self.blink_durations.append(
-                    duration_ms
-                )
+                self.completed_blink_duration_ms = duration_ms
+                if self.aggregate_minutes:
+                    self.blink_durations.append(duration_ms)
 
             self.in_blink = False
             self.blink_start_time = None
@@ -173,7 +188,7 @@ class BlinkDuration:
         # 1분 완료
         # =====================================================
 
-        if elapsed >= self.measurement_interval:
+        if self.aggregate_minutes and elapsed >= self.measurement_interval:
 
             self.blink_count = len(
                 self.blink_durations
@@ -232,6 +247,8 @@ class BlinkDuration:
         )
 
         return {
+
+            "completed_blink_duration_ms": self.completed_blink_duration_ms,
 
             "in_blink":
                 self.in_blink,
